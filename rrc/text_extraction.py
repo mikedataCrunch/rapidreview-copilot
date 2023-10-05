@@ -3,15 +3,18 @@ reference managers, pdfs, and other common sources for review.
 """
 
 # import libraries and set up depedencies 
+import pandas as pd
 from glob import glob
-
+from pyzotero import zotero
+import json
 
 # pdf extractor
-class PDFExtractor(src_dir, extractor, metadata_path=None, paths_col=None,):
+class PDFExtractor():
     """This class instantiates the PDF Extractor class."""
-    def __init__(src_dir, metadta):
+    def __init__(self, src_dir, extractor, metadata_path=None, paths_col=None,):
         self.src_dir = src_dir
-        self.metadata_path = metadata
+        self.extractor = extractor
+        self.metadata_path = metadata_path
         self.paths_col = paths_col
         self.metadata = None
         self.paths = None
@@ -28,13 +31,14 @@ class PDFExtractor(src_dir, extractor, metadata_path=None, paths_col=None,):
         # concat src_dir and relative path
         # include the choice of python pdf extract package to use
         if extractor=='some_name':
+            pass
             # extraction specific to that package
-        elif extradctor=:
+        elif extradctor=="other name":
         
         
         # use concat path as input to pdf extractor
         
-        pass
+            pass
         
     def mass_extract(self, include_meta=False):
         """Extract PDF text from all pdfs self.paths and store the output in a temporary directory"""
@@ -66,11 +70,56 @@ class PDFExtractor(src_dir, extractor, metadata_path=None, paths_col=None,):
     pass
 
 # reference manager extractor
-class ZoteroAPIMetaExtractor(path, filetype):
+class ZoteroAPIMetaExtractor():
     """This class instantiates the reference manager extractor class."""
-    
-    pass
+    def __init__(self, path = None, filetype =None):
+        self.path = path
+        self.filetype = filetype
 
+    def extract(self, library_id, library_type, api_key, collection_key=None):
+        """
+        library_id     --> library id as XXXXX 'www.zotero.org/groups/XXXXX/[library_name]'
+        library_type   --> as 'group' for shared group library and 'user' for own Zotero library
+        api_key        --> personal Zotero API key
+        collection_key --> for specifc collection only
+        filetype       --> extract metadata as [json, csv]
+        """
+        # Initialize the Zotero library
+        zot = zotero.Zotero(library_id, library_type, api_key)
+        
+        # Create an empty list to store item data
+        zotero_metadata_list = []
+        
+        # retrieve items in specifc collection
+        if collection_key:  
+            try:
+                # Retrieve all items within the specific collection
+                items = zot.collection_items(collection_key)
+            except:
+                return "Code: 404.\nResponse: Collection not found"
+            
+        # retrieve items in all collection 
+        else:
+            # retrieve all items
+            items = zot.everything(zot.items())
+        try:    
+            for item in items:
+                if 'collections' in item['data'].keys():
+                    zotero_metadata_list.append(item['data'])
+        except:
+            return "Code: 404.\nResponse: Collection not found"
+        
+        # filetype choice 
+        if self.filetype.lower() == "json":
+            with open('ZoteroMetadata.json', 'w') as json_file:
+                json.dump(zotero_metadata_list , json_file)
+            return
+        elif self.filetype.lower() == "csv":
+            pd.DataFrame.from_dict(zotero_metadata_list).to_csv("ZoteroMetadata.csv",index = False)
+            return 
+        else:
+            return 'File type not available.'
+        
 
 # running from terminal
 if __name__ == "__main__":
