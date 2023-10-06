@@ -90,19 +90,16 @@ class PDFExtractor():
         """Extract PDF text from all pdfs self.paths and store the output in a temporary directory"""
         try:
             # Create a temporary directory to store the JSON files
-            with tempfile.TemporaryDirectory() as temp_dir:
-                for path in self.paths:
-                    # Extract text using the extract method
+            temp_dir = tempfile.mkdtemp(dir='.')
+            for path in self.paths:
+                if path.endswith(".pdf"):
                     extracted_data = self.extract(extractor=extractor, path=path)
-                    if "error" not in extracted_data:
-                        # Create a JSON file name based on the original PDF file name
-                        pdf_file_name = os.path.basename(path)
-                        json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
-                        json_file_path = os.path.join(temp_dir, json_file_name)
-
-                        # Write extracted data to the JSON file
-                        with open(json_file_path, 'w') as json_file:
-                            json.dump(extracted_data, json_file, indent=4)
+                    pdf_file_name = os.path.basename(path)
+                    json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
+                    json_file_path = os.path.join(temp_dir, json_file_name)
+                    # Write extracted data to the JSON file
+                    with open(json_file_path, 'w') as json_file:
+                        json.dump(extracted_data, json_file, indent=4)
 
                 # Return the path to the temporary directory containing JSON files
                 return temp_dir
