@@ -88,24 +88,19 @@ class PDFExtractor():
         
     def mass_extract(self, extractor='pdfplumber', include_meta=False):
         """Extract PDF text from all pdfs self.paths and store the output in a temporary directory"""
-        try:
-            # Create a temporary directory to store the JSON files
-            temp_dir = tempfile.mkdtemp(dir='.')
-            for path in self.paths:
-                if path.endswith(".pdf"):
-                    extracted_data = self.extract(extractor=extractor, path=path)
-                    pdf_file_name = os.path.basename(path)
-                    json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
-                    json_file_path = os.path.join(temp_dir, json_file_name)
-                    # Write extracted data to the JSON file
-                    with open(json_file_path, 'w') as json_file:
-                        json.dump(extracted_data, json_file, indent=4)
 
-                # Return the path to the temporary directory containing JSON files
-                return temp_dir
+        temp_dir = tempfile.mkdtemp(dir='.')
+        for path in self.paths:
+            if path.endswith(".pdf"):
+                extracted_data = self.extract(extractor=extractor, path=path)
+                pdf_file_name = os.path.basename(path)
+                json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
+                json_file_path = os.path.join(temp_dir, json_file_name)
+                # Write extracted data to the JSON file
+                with open(json_file_path, 'w') as json_file:
+                    json.dump(extracted_data, json_file, indent=4)
+        return temp_dir
 
-        except Exception as e:
-            return {"error": str(e)}
         # run self.extract iteratively and saves them in a temporary directory as json files
         # {'path': <extracted_text>} ---> sample structure
         
