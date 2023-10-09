@@ -10,6 +10,7 @@ import os
 
 # extract text from pdfs
 import pdfplumber
+from PyPDF2 import PdfReader
 
 # temporary file
 import tempfile
@@ -78,8 +79,27 @@ class PDFExtractor():
                     result_json = {"extracted_text": extracted_text_list}
                     return result_json
                 
-            elif extractor == 'PyMuPDF':
-                pass
+            elif extractor == 'PdfReader':
+                # Creating a pdf reader object
+                reader = PdfReader(full_path)
+                # Empty string to store text
+                extracted_text = ""
+                
+                # Loop through every page
+                for page_num in range(reader.numPages):
+                    # Get a specific page
+                    page = reader.getPage(page_num)
+                
+                    # Extract text from the page
+                    page_text = page.extract_text()
+                    
+                    # Concatenate the page number and page text
+                    page_with_number = f"Page {page_num + 1}:\n{page_text}\n\n"
+                    
+                    # Append the page text to the extracted_text string
+                    extracted_text += page_with_number
+
+                return extracted_text
                 
         except FileNotFoundError as e:
             return {"error": str(e)}
