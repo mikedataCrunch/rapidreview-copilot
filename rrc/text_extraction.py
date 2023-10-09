@@ -86,7 +86,7 @@ class ZoteroAPIMetaExtractor():
         """
         # Initialize the Zotero library
         zot = zotero.Zotero(library_id, library_type, api_key)
-        
+
         # Create an empty list to store item data
         zotero_metadata_list = []
         
@@ -96,18 +96,19 @@ class ZoteroAPIMetaExtractor():
                 # Retrieve all items within the specific collection
                 items = zot.collection_items(collection_key)
             except:
-                return "Code: 404.\nResponse: Collection not found"
-            
+                return "Response: Collection not found"  
         # retrieve items in all collection 
         else:
             # retrieve all items
             items = zot.everything(zot.items())
+        
+        # add items into list
         try:    
             for item in items:
                 if 'collections' in item['data'].keys():
                     zotero_metadata_list.append(item['data'])
         except:
-            return "Code: 404.\nResponse: Collection not found"
+            return "Response: No item in collections1"
         
         # filetype choice 
         if self.filetype.lower() == "json":
@@ -115,7 +116,7 @@ class ZoteroAPIMetaExtractor():
                 json.dump(zotero_metadata_list , json_file)
             return
         elif self.filetype.lower() == "csv":
-            pd.DataFrame.from_dict(zotero_metadata_list).to_csv("ZoteroMetadata.csv",index = False)
+            pd.DataFrame.from_dict(zotero_metadata_list).to_csv("ZoteroMetadata.csv", index = False)
             return 
         else:
             return 'File type not available.'
