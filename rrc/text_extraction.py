@@ -47,17 +47,11 @@ class PDFExtractor():
                 raise FileNotFoundError(f"The file at path '{full_path}' does not exist.")
             # include the choice of python pdf extract package to use
             if extractor=='pdfplumber':
-                # List to store extracted text
+                # List to store extracted text as dictionaries
                 extracted_text_list = []
                 # Extract the text
                 with pdfplumber.open(full_path) as pdf:
-                    for page in pdf.pages:
-                        # Define explicit horizontal lines as a list of floats (example values)
-                        explicit_horizontal_lines = [50.0, 100.0, 150.0]  # Adjust the values as needed
-
-                        # Define explicit vertical lines as a list of floats (example values)
-                        explicit_vertical_lines = [100.0, 200.0, 300.0]  # Adjust the values as needed
-
+                    for page_num, page in enumerate(pdf.pages, start=1):
                         # Get the bounding boxes of the tables on the page.
                         bboxes = [
                             table.bbox
@@ -65,68 +59,100 @@ class PDFExtractor():
                                 table_settings={
                                     "vertical_strategy": "explicit",
                                     "horizontal_strategy": "explicit",
-                                    "explicit_vertical_lines": explicit_vertical_lines,
-                                    "explicit_horizontal_lines": explicit_horizontal_lines,
+                                    "explicit_vertical_lines": page.curves + page.edges,
+                                    "explicit_horizontal_lines": page.curves + page.edges,
                                 }
                             )
                         ]
 
-                        # Extract and append text from the page to the list
-                        extracted_text = page.filter(self.not_within_bboxes).extract_text()
-                        extracted_text_list.append(extracted_text)
+                        # Function to check if an object is within any bounding box
+                        def not_within_bboxes(obj):
+                            def obj_in_bbox(_bbox):
+                                v_mid = (obj["top"] + obj["bottom"]) / 2
+                                h_mid = (obj["x0"] + obj["x1"]) / 2
+                                x0, top, x1, bottom = _bbox
+                                return (h_mid >= x0) and (h_mid < x1) and (v_mid >= top) and (v_mid < bottom)
 
-                    # Convert the list to a JSON object
-                    result_json = {"extracted_text": extracted_text_list}
-                    return result_json
+                            return not any(obj_in_bbox(__bbox) for __bbox in bboxes)
+
+                        # Extract text from the page
+                        extracted_text = page.filter(not_within_bboxes).extract_text()
+
+                        # Create a dictionary with "page" and "extracted text" keys
+                        page_dict = {"page": page_num, "extracted text": extracted_text}
+                        
+                        # Append the dictionary to the list
+                        extracted_text_list.append(page_dict)
+
+                    # Return the list of dictionaries
+                    return extracted_text_list
                 
             elif extractor == 'PdfReader':
                 # Creating a pdf reader object
                 reader = PdfReader(full_path)
-                # Empty string to store text
-                extracted_text = ""
-                
+                # List to store extracted text as dictionaries
+                extracted_text_list = []
+
                 # Loop through every page
                 for page_num in range(reader.numPages):
                     # Get a specific page
                     page = reader.getPage(page_num)
-                
+
                     # Extract text from the page
                     page_text = page.extract_text()
-                    
-                    # Concatenate the page number and page text
-                    page_with_number = f"Page {page_num + 1}:\n{page_text}\n\n"
-                    
-                    # Append the page text to the extracted_text string
-                    extracted_text += page_with_number
 
-                return extracted_text
-                
+                    # Create a dictionary with "page" and "extracted text" keys
+                    page_dict = {"page": page_num + 1, "extracted text": page_text}
+
+                    # Append the dictionary to the list
+                    extracted_text_list.append(page_dict)
+
+                # Return the list of dictionaries
+                return extracted_text_list
+
         except FileNotFoundError as e:
-            return {"error": str(e)}
+            return [{"error": str(e)}]
         except Exception as e:
-            return {"error": str(e)}
+            return [{"error": str(e)}]
+
         
-    def mass_extract(self, extractor='pdfplumber', include_meta=False):
-        """Extract PDF text from all pdfs self.paths and store the output in a temporary directory"""
-
-        temp_dir = tempfile.mkdtemp(dir='.')
-        for path in self.paths:
-            if path.endswith(".pdf"):
-                extracted_data = self.extract(extractor=extractor, path=path)
-                pdf_file_name = os.path.basename(path)
-                json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
-                json_file_path = os.path.join(temp_dir, json_file_name)
-                # Write extracted data to the JSON file
-                with open(json_file_path, 'w') as json_file:
-                    json.dump(extracted_data, json_file, indent=4)
-        return temp_dir
-
+    def mass_extract(self, extractor=None, include_meta=False, dest_dir=None):
+        """Extract PDF text from all pdfs self.paths and store the output in a specified directory"""
+        
+        # If dest_dir is not specified, use a temporary directory
+        if extractor is None and dest_dir is None:
+            dest_dir = tempfile.mkdtemp(dir='.')
+        
+        elif extractor == 'pdfplumber': 
+            for path in self.paths:
+                if path.endswith(".pdf"):
+                    extracted_data = self.extract(extractor='pdfplumber', path=path)
+                    pdf_file_name = os.path.basename(path)
+                    json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
+                    json_file_path = os.path.join(dest_dir, json_file_name)
+                    # Write extracted data to the JSON file
+                    with open(json_file_path, 'w') as json_file:
+                        json.dump(extracted_data, json_file, indent=4)
+            return dest_dir
+        
+        elif extractor == 'PdfReader': 
+            for path in self.paths:
+                if path.endswith(".pdf"):
+                    extracted_data = self.extract(extractor='PdfReader', path=path)
+                    pdf_file_name = os.path.basename(path)
+                    json_file_name = os.path.splitext(pdf_file_name)[0] + '.json'
+                    json_file_path = os.path.join(dest_dir, json_file_name)
+                    # Write extracted data to the JSON file
+                    with open(json_file_path, 'w') as json_file:
+                        json.dump(extracted_data, json_file, indent=4)
+            return dest_dir
+        
         # run self.extract iteratively and saves them in a temporary directory as json files
         # {'path': <extracted_text>} ---> sample structure
         
         # if include_meta is true, append metadata using column name and value as key:value pairs
         if self.metadata and include_meta:
-            pass
+            pass    
         
         pass
     
@@ -145,16 +171,6 @@ class PDFExtractor():
     def persist(self, dest_dir):
         """Persists all files in the temporary directory into a dest_dir"""
         pass
-
-    def not_within_bboxes(self, obj):
-
-        def obj_in_bbox(_bbox):
-            v_mid = (obj["top"] + obj["bottom"]) / 2
-            h_mid = (obj["x0"] + obj["x1"]) / 2
-            x0, top, x1, bottom = _bbox
-            return (h_mid >= x0) and (h_mid < x1) and (v_mid >= top) and (v_mid < bottom)
-
-        return not any(obj_in_bbox(__bbox) for __bbox in self.bboxes)
     
     pass
 
