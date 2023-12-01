@@ -128,8 +128,10 @@ class RapidReviewSession():
         """ """
         # initialize chunking dependencies
         self._get_context_size(prompt, query)
-        try:
-            params.get("retriever").get("top_k")
+        retriever_top_k = params.get("retriever").get("top_k")
+        if not retreiver_top_k:
+            raise RuntimeError("Retriever top_k must be specified in params.")
+            
         self._get_chunk_size(retriever_top_k)
         
         # trigger self._chunk_articles, and init doc store
@@ -147,12 +149,6 @@ class RapidReviewSession():
             self.qa_model,
             default_prompt_template=prompt_template,
         )
-        params = {
-            "retriever": {
-                "filters": {
-                    "article_id": [article_id]},
-            }
-        }
         pipe = Pipeline()
         pipe.add_node(component=self.retreiver,
                       name="retriever", inputs=["Query"])
