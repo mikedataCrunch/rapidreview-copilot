@@ -5,9 +5,7 @@ reference managers, pdfs, and other common sources for review.
 # import libraries and set up depedencies 
 import pandas as pd
 from glob import glob
-<<<<<<< Updated upstream
 from pyzotero import zotero
-=======
 import numpy as np
 import pandas as pd
 import os
@@ -22,18 +20,11 @@ from PyPDF2 import PdfReader
 import tempfile
 
 # json
->>>>>>> Stashed changes
 import json
 
 # pdf extractor
 class PDFExtractor():
     """This class instantiates the PDF Extractor class."""
-<<<<<<< Updated upstream
-    def __init__(self, src_dir, extractor, metadata_path=None, paths_col=None,):
-        self.src_dir = src_dir
-        self.extractor = extractor
-        self.metadata_path = metadata_path
-=======
     def __init__(
         self, 
         src_dir : str, 
@@ -54,7 +45,6 @@ class PDFExtractor():
         """
         self.src_dir = src_dir
         self.bboxes = []
->>>>>>> Stashed changes
         self.paths_col = paths_col
         self.metadata = metadata
         self._get_paths(src_dir)
@@ -74,13 +64,6 @@ class PDFExtractor():
         """Extract PDF text from pdf filepath and returns extracted text in a json structure"""
         
         # concat src_dir and relative path
-<<<<<<< Updated upstream
-        # include the choice of python pdf extract package to use
-        if extractor=='some_name':
-            pass
-            # extraction specific to that package
-        elif extradctor=="other name":
-=======
         full_path = os.path.join(self.src_dir, path)
 
         try:
@@ -152,7 +135,6 @@ class PDFExtractor():
         except Exception as e:
             return [{"error": str(e)}]
 
->>>>>>> Stashed changes
         
     def mass_extract(self, extractor=None, include_meta=False, dest_dir=None):
         """Extract PDF text from all pdfs self.paths and store the output in a specified directory"""
@@ -175,9 +157,6 @@ class PDFExtractor():
                         filename_list.append(json_file_name)
             return filename_list
         
-<<<<<<< Updated upstream
-            pass
-=======
         elif extractor == 'PdfReader': 
             for path in self.paths:
                 if path.endswith(".pdf"):
@@ -190,7 +169,6 @@ class PDFExtractor():
                         json.dump(extracted_data, json_file, indent=4)
                         filename_list.append(json_file_name)
             return filename_list
->>>>>>> Stashed changes
         
         # run self.extract iteratively and saves them in a temporary directory as json files
         # {'path': <extracted_text>} ---> sample structure
@@ -227,16 +205,10 @@ class PDFExtractor():
 # reference manager extractor
 class ZoteroAPIMetaExtractor():
     """This class instantiates the reference manager extractor class."""
-<<<<<<< Updated upstream
-    def __init__(self, path = None, filetype =None):
-        self.path = path
-        self.filetype = filetype
-=======
     def __init__(self, path, filetype):
         self.path = path
         self.filetype = filetype
     pass
->>>>>>> Stashed changes
 
     def extract(self, library_id, library_type, api_key, collection_key=None):
         """

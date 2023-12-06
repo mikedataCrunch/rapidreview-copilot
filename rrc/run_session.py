@@ -44,7 +44,6 @@ class RapidReviewSession():
         self, 
         src_dir: str, 
         ret_models: tuple, 
-        ret_top_k: int, 
         qa_model: str, 
         max_ans_length: Optional[int] = 100,
         min_context_size: Optional[int] = 200, 
@@ -56,7 +55,6 @@ class RapidReviewSession():
         :param src_dir: The name of the source directory where JSON files are being stored.
         :param ret_models: Tuple of retriever models. First element to be the Query Embedding model, 
             second element to be the Context Embedding model
-        :param ret_top_k: Top k chunks retrieved from document store based on query.
         :param qa_model: The name of the model to use or an instance of the PromptModel.
         :param max_ans_length: he maximum number of tokens the generated text output can have.
             If not set, default 100
@@ -71,7 +69,6 @@ class RapidReviewSession():
         # retriever models 
         self.query_embedding_model = ret_models[0]
         self.context_embedding_model = ret_models[1]
-        self.ret_top_k = ret_top_k
         self.ret_tokenizer = AutoTokenizer.from_pretrained(
             self.context_embedding_model
         )
@@ -139,33 +136,32 @@ class RapidReviewSession():
             with open(path, 'r') as file:
                 data = json.load(file)
                 article_id = data.get("article_id")
+                # check for article
                 if (article_id == chosen_article_id):
                     extracted_context = data.get("extracted_text")
-            
-        # NOTE: QA tokenizer is used to get the correct seq lengths
-        tokenized_context = self.ret_tokenizer(
-            extracted_context, return_tensors="pt").input_ids
-        counter = 0
-        for tokenized_list in tokenized_context:
-            for start_index in range(
-                    0, len(tokenized_list), self.chunk_size):
-                # handles contexts with length not divisible by chunk_size
-                if start_index + self.chunk_size >= len(tokenized_list):
-                    tokenized_chunk = tokenized_list[start_index:]
-                else:
-                    tokenized_chunk = tokenized_list[start_index: start_index + self.chunk_size]
-                chunk_text = self.ret_tokenizer.decode(tokenized_chunk)
-                meta = data.copy()
-                meta["chunk_id"] = f"{article_id}_{counter}"
-                # using a linux path to file, extract file name e.g., some_title.pdf
-                meta["filename"] = os.path.basename(
-                    os.path.realpath(path)
-                ) # verify if this works in windows paths
-            
-                chunk_data = Document(content=chunk_text, meta=meta)
-                documents.append(chunk_data)
-                counter += 1
-
+                    # NOTE: QA tokenizer is used to get the correct seq lengths
+                    tokenized_context = self.ret_tokenizer(
+                        extracted_context, return_tensors="pt").input_ids
+                    counter = 0
+                    for tokenized_list in tokenized_context:
+                        for start_index in range(
+                                0, len(tokenized_list), self.chunk_size):
+                            # handles contexts with length not divisible by chunk_size
+                            if start_index + self.chunk_size >= len(tokenized_list):
+                                tokenized_chunk = tokenized_list[start_index:]
+                            else:
+                                tokenized_chunk = tokenized_list[start_index: start_index + self.chunk_size]
+                            chunk_text = self.ret_tokenizer.decode(tokenized_chunk)
+                            meta = data.copy()
+                            meta["chunk_id"] = f"{article_id}_{counter}"
+                            # using a linux path to file, extract file name e.g., some_title.pdf
+                            meta["filename"] = os.path.basename(
+                                os.path.realpath(path)
+                            ) # verify if this works in windows paths
+                        
+                            chunk_data = Document(content=chunk_text, meta=meta)
+                            documents.append(chunk_data)
+                            counter += 1
         return documents
     
     def _init_document_store(
