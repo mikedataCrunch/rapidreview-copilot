@@ -205,8 +205,7 @@ class PDFExtractor():
 # reference manager extractor
 class ZoteroAPIMetaExtractor():
     """This class instantiates the reference manager extractor class."""
-    def __init__(self, path, filetype):
-        self.path = path
+    def __init__(self, filetype):
         self.filetype = filetype
     pass
 
@@ -244,14 +243,20 @@ class ZoteroAPIMetaExtractor():
         except:
             return "Response: No item in collections1"
         
+        # Create the folder if it doesn't exist
+        folder_name = 'ZoteroMeta'
+        os.makedirs(folder_name, exist_ok=True)
+        
         # filetype choice 
         if self.filetype.lower() == "json":
-            with open('ZoteroMetadata.json', 'w') as json_file:
+            json_file_path = os.path.join(folder_name, 'ZoteroMetadata.json')
+            with open(json_file_path, 'w') as json_file:
                 json.dump(zotero_metadata_list , json_file)
-            return
+            return f"JSON file created: {json_file_path}"
         elif self.filetype.lower() == "csv":
-            pd.DataFrame.from_dict(zotero_metadata_list).to_csv("ZoteroMetadata.csv", index = False)
-            return 
+            csv_file_path = os.path.join(folder_name, 'ZoteroMeta.csv')
+            pd.DataFrame.from_dict(zotero_metadata_list).to_csv(csv_file_path, index = False)
+            return f"CSV file created: {csv_file_path}"
         else:
             return 'File type not available.'
         
