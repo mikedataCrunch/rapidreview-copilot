@@ -55,6 +55,7 @@ class PDFExtractor():
             self.paths = self.metadata[self.paths_col].tolist()
         else:
             self.paths = glob(os.path.join(src_dir, '*'))
+        return self.paths
     
     def generate_article_id(self):
         # Generate a UUID-based article ID
@@ -64,12 +65,12 @@ class PDFExtractor():
         """Extract PDF text from pdf filepath and returns extracted text in a json structure"""
         
         # concat src_dir and relative path
-        full_path = os.path.join(self.src_dir, path)
-
+        #full_path = os.path.join(self.src_dir, path)
+        #print(full_path)
         try:
             # Check if the path exists
-            if not os.path.exists(full_path):
-                raise FileNotFoundError(f"The file at path '{full_path}' does not exist.")
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"The file at path '{path}' does not exist.")
             # include the choice of python pdf extract package to use
 
             # Generate unique article id
@@ -78,7 +79,7 @@ class PDFExtractor():
             
             if extractor=='pdfplumber':
                 # Extract the text
-                with pdfplumber.open(full_path) as pdf:
+                with pdfplumber.open(path) as pdf:
                     for page in pdf.pages:
                         # Get the bounding boxes of the tables on the page.
                         bboxes = [
@@ -113,7 +114,7 @@ class PDFExtractor():
                 
             elif extractor == 'PdfReader':
                 # Creating a pdf reader object
-                reader = PdfReader(full_path)
+                reader = PdfReader(path)
 
                 # Loop through every page
                 for page_num in range(len(reader.pages)):
@@ -136,15 +137,15 @@ class PDFExtractor():
             return [{"error": str(e)}]
 
         
-    def mass_extract(self, extractor=None, include_meta=False, dest_dir=None):
+    def mass_extract(self, extractor, include_meta=False, dest_dir=None):
         """Extract PDF text from all pdfs self.paths and store the output in a specified directory"""
         filename_list = []
         self.dest_dir = dest_dir
         # If dest_dir is not specified, use a temporary directory
-        if extractor is None and dest_dir is None:
+        if dest_dir is None:
             dest_dir = tempfile.mkdtemp(dir='.')
         
-        elif extractor == 'pdfplumber': 
+        if extractor == 'pdfplumber': 
             for path in self.paths:
                 if path.endswith(".pdf"):
                     extracted_data = self.extract(extractor='pdfplumber', path=path)
