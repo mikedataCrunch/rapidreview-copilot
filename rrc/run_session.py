@@ -47,7 +47,8 @@ class RapidReviewSession():
         qa_model: str, 
         max_ans_length: Optional[int] = 100,
         min_context_size: Optional[int] = 200, 
-        seq_length_buffer: Optional[int] = 50
+        seq_length_buffer: Optional[int] = 50,
+        use_gpu: Optional[bool] = None
     ):
         """ 
         Creates a RapidReview instance. 
@@ -62,6 +63,8 @@ class RapidReviewSession():
             If not set, default 200
         :param seq_length_buffer: The number of token length to buffer for difference in chunking tokenizer and generator tokenizer
             If not set, default 50
+        :param use_gpu: Whether to use GPU or not.
+            If not set, default None
         """
         # session text sources
         self.src_dir = src_dir
@@ -85,6 +88,7 @@ class RapidReviewSession():
         self.max_ans_length = max_ans_length
         self.seq_length_buffer = seq_length_buffer
         self.min_context_size = min_context_size
+        self.use_gpu  = use_gpu
 
         print(f"Retriever MAX SEQ LENGTH: {self.ret_max_length}")
         print(f"QA model MAX SEQ LENGTH (Input limit): {self.qa_max_length}")
@@ -130,7 +134,7 @@ class RapidReviewSession():
         """ """
         documents = []
         # Obtain chosen article
-        chosen_article_id = params["Retriever"]["filters"]['article_id']
+        chosen_article_id = params["retriever"]["filters"]['article_id']
         doc_paths = glob(os.path.join(self.src_dir, f'*.{fmt}'))
         for path in tqdm(doc_paths):
             with open(path, 'r') as file:
@@ -258,7 +262,7 @@ class RapidReviewSession():
         """
         # initialize chunking dependencies
         self._get_context_size(prompt, query)
-        self.ret_top_k = params.get("Retriever").get("top_k")
+        self.ret_top_k = params.get("retriever").get("top_k")
         if not self.ret_top_k:
             raise RuntimeError("Retriever top_k must be specified in params.")
             
@@ -277,15 +281,16 @@ class RapidReviewSession():
         prompt_node = PromptNode(
             self.qa_model,
             default_prompt_template=prompt_template,
-            max_length = self.max_ans_length
+            max_length = self.max_ans_length,
+            use_gpu= self.use_gpu
         )
         
         # Init Pipeline
         pipe = Pipeline()
         pipe.add_node(component=self.retriever,
-                      name="Retriever", inputs=["Query"])
+                      name="retriever", inputs=["Query"])
         pipe.add_node(component=prompt_node,
-                      name="PromptNode", inputs=["Retriever"])
+                      name="prompt_node", inputs=["retriever"])
         output = pipe.run(query=query, params=params)
         # resets document store
         self._reset_document_store()
