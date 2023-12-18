@@ -11,6 +11,7 @@ import pandas as pd
 import os
 import uuid
 import re
+from typing import Union, Literal
 
 # extract text from pdfs
 import pdfplumber
@@ -24,25 +25,30 @@ import json
 
 # pdf extractor
 class PDFExtractor():
-    """This class instantiates the PDF Extractor class."""
+    """
+    PDFExtractor is a Python module designed to extract text from PDF files. By specifying a source directory
+    containing PDF files, this tool processes each PDF file, extracting its text and storing the results as
+    JSON data paired with a unique article ID.  
+    """
     def __init__(
         self, 
         src_dir : str, 
         paths_col=None, 
         metadata=None
     ):
-        # Check if src_dir exists
-        if not os.path.exists(src_dir):
-            raise ValueError(f"The specified source directory '{src_dir}' does not exist.")
         """
         Creates a PDFExtractor instance.
 
         :param src_dir: The name of the source directory where PDF files are being stored.
         :param extractor: Extractor must be either "pdfplumber" or "PdfReader".
-        :param paths_col: 
-        :param metadata: 
+        :param paths_col: Name of file
+        :param metadata: Metadata from collection of papers
         
         """
+        # Check if src_dir exists
+        if not os.path.exists(src_dir):
+            raise ValueError(f"The specified source directory '{src_dir}' does not exist.")
+        
         self.src_dir = src_dir
         self.bboxes = []
         self.paths_col = paths_col
@@ -61,12 +67,16 @@ class PDFExtractor():
         # Generate a UUID-based article ID
         return str(uuid.uuid4())
 
-    def extract(self, extractor, path=None):
-        """Extract PDF text from pdf filepath and returns extracted text in a json structure"""
+    def extract(self, 
+        extractor: Union["pdfplumber", "PdfReader"], 
+        path=None):
+        """
+        Extract PDF text from pdf filepath and returns extracted text in a json structure
+        
+        :param extractor: Extractor libraries. 
+        """
         
         # concat src_dir and relative path
-        #full_path = os.path.join(self.src_dir, path)
-        #print(full_path)
         try:
             # Check if the path exists
             if not os.path.exists(path):
@@ -138,7 +148,9 @@ class PDFExtractor():
 
         
     def mass_extract(self, extractor, include_meta=False, dest_dir=None):
-        """Extract PDF text from all pdfs self.paths and store the output in a specified directory"""
+        """
+        Extract PDF text from all pdfs self.paths and store the output in a specified directory
+        """
         filename_list = []
         self.dest_dir = dest_dir
         # If dest_dir is not specified, use a temporary directory
@@ -180,43 +192,48 @@ class PDFExtractor():
         
         pass
     def get_extracted(self):
-        if self.dest_dir is None:
+        if not hasattr(self, "dest_dir") or self.dest_dir is None:
             raise RuntimeError("mass_extract() must be called before get_extracted()")
         return self.dest_dir
-        
-    
-    def load_sample(self, paths=None, sample_size=3):
-        if paths:
-            sample_texts = None # load json from temporary directory into memory
-        else:
-            sample_texts = None # randomly choose sample_size from the temporary directory   
-        return sample_texts
-    
-    def extract_chunks(self, chunk_size=5):
-        # generator: chuck paths into chunk size and return into memory
-        pass
-        #yield chunk
-    
-    def persist(self, dest_dir):
-        """Persists all files in the temporary directory into a dest_dir"""
-        pass
-    
-    pass
+            
 
 # reference manager extractor
 class ZoteroAPIMetaExtractor():
-    """This class instantiates the reference manager extractor class."""
-    def __init__(self, filetype):
+    """
+    Zotero is a open source reference manager that enables individuals to collect, organize, cite
+    and share academic materials. This class uses Zotero API to automate information retreival of 
+    libraries or collections within the software. Extracted information includes abstract, authors, etc.
+    
+    """
+    def __init__(
+        self, 
+        filetype: Literal["json", "csv"]
+    ):
+        """
+        Creates a ZoteroAPIMetaExtractor instance
+        
+        :param filetype: File type for extracted metadata as [json, csv].
+        """
         self.filetype = filetype
     pass
 
-    def extract(self, library_id, library_type, api_key, collection_key=None):
+    def extract(
+        self, 
+        library_id: str, 
+        library_type: Literal["user", "group"], 
+        api_key: str, 
+        collection_key=None
+    ):
         """
-        library_id     --> library id as XXXXX 'www.zotero.org/groups/XXXXX/[library_name]'
-        library_type   --> as 'group' for shared group library and 'user' for own Zotero library
-        api_key        --> personal Zotero API key
-        collection_key --> for specifc collection only
-        filetype       --> extract metadata as [json, csv]
+        Extract metadata in Zotero's library or specific collection. Extracted metadata will be stored as 
+        json or csv file type. 
+        
+        :param library_id: library id as XXXXX 'www.zotero.org/groups/XXXXX/[library_name]'.
+        :param library_type: as 'group' for shared group library and 'user' for own Zotero library.
+        :param api_key: Personal Zotero API key.
+        :param collection_key: To include specifc collection only.
+                    If not set, default None.
+        
         """
         # Initialize the Zotero library
         zot = zotero.Zotero(library_id, library_type, api_key)
@@ -242,7 +259,7 @@ class ZoteroAPIMetaExtractor():
                 if 'collections' in item['data'].keys():
                     zotero_metadata_list.append(item['data'])
         except:
-            return "Response: No item in collections1"
+            return "Response: No item in collections"
         
         # Create the folder if it doesn't exist
         folder_name = 'ZoteroMeta'

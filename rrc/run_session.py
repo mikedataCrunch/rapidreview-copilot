@@ -57,7 +57,7 @@ class RapidReviewSession():
         :param ret_models: Tuple of retriever models. First element to be the Query Embedding model, 
             second element to be the Context Embedding model
         :param qa_model: The name of the model to use or an instance of the PromptModel.
-        :param max_ans_length: he maximum number of tokens the generated text output can have.
+        :param max_ans_length: The maximum number of tokens the generated text output can have.
             If not set, default 100
         :param min_context_size: The minimum chunk size that user wish to input. 
             If not set, default 200
@@ -204,10 +204,11 @@ class RapidReviewSession():
             document_store=self.document_store,
             query_embedding_model=self.query_embedding_model,
             passage_embedding_model=self.context_embedding_model,
-            embed_title=True)
+            embed_title=True,
+            use_gpu=self.use_gpu)
         # Delete document store before writing
         # Vectors changed when token length changes, delete the file to flush 
-        self.document_store.delete_documents()
+        self.document_store.delete_documents() 
         self.document_store.write_documents(documents)
         # Update embeddings
         self.document_store.update_embeddings(retriever=self.retriever)
@@ -282,7 +283,7 @@ class RapidReviewSession():
             self.qa_model,
             default_prompt_template=prompt_template,
             max_length = self.max_ans_length,
-            use_gpu= self.use_gpu
+            use_gpu=self.use_gpu
         )
         
         # Init Pipeline
