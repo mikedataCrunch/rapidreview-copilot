@@ -274,13 +274,12 @@ class RapidReviewSession():
         
         # Init PromptTemplate
         prompt_template = PromptTemplate(
-            prompt=prompt,
-            output_parser=AnswerParser(),
+            prompt=prompt
         )
         
         # Init PromptNode, provide answer limit
         prompt_node = PromptNode(
-            self.qa_model,
+            model_name_or_path=self.qa_model,
             default_prompt_template=prompt_template,
             max_length = self.max_ans_length,
             use_gpu=self.use_gpu
@@ -295,4 +294,4 @@ class RapidReviewSession():
         output = pipe.run(query=query, params=params)
         # resets document store
         self._reset_document_store()
-        return dict(zip(output["query"], output["answers"]))
+        return output
