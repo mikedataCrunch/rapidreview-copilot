@@ -4,4 +4,5 @@ data/
 tutorials/doc_store_index.faiss
 tutorials/doc_store_config.json
 tutorials/faiss_document_store.db
+tutorials/temp_articles
 **/VENV-MYENV/

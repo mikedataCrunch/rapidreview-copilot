@@ -1,75 +1,42 @@
 # rapidreview-copilot
 This repository compiles tools that assist in the conduct of rapid literature reviews--from text and data extraction to thematic analysis.
 
-# Setting up Environments
-## Conda Environment
+## Setting up Environments
+The steps below assume that the current working directory is the repository top level dir. The steps also assume some `conda` is installed in the user's machine.
 
-Considering that you already have conda installed on your pc. 
-The `environment.yml` file contains a list of packages and their versions needed to run the `DEMO_SESSION.ipynb`. 
+### Using `conda` environment.yml
 
-Firstly, open your terminal or command prompt and check if the file path shown is your working directory. Else, use the following code to do that:
+1. Use the following code to create your the `rrc_env` from the environment.yml file:
+    ```cmd
+    conda env create --file environment.yml
+    ```
+2. Upon creating the environment, you can activate/deactivate it using the following command:
 ```cmd
-cd folder-name
+conda activate rrc_env
+conda deactivate
 ```
 
-Use the following code to create your Conda environment:
+### Using `pip` requirements.txt
+
+1. Create a conda environment with `python` installed: The specific Python version (3.9 in this scenario). Alternatively, `virtualenv` can also be used to set up a `venv` based environment (not shown).
 ```cmd
-conda create --name <your-environment-name> --file environment.yml
+conda create --name rrc_env python=3.9 virtualenv
 ```
 
-Upon creating the environment, you can activate it using the following command:
+2. Upon creating the environment, you can activate/deactivate it using the following command:
 ```cmd
-conda activate <your-environment-name>
+conda activate rrc_env
+conda deactivate
 ```
-
-## Virtual Environment
-Considering that you already have pip installed on your pc.
-The `requirements.txt` file contains a list of packages or libraries needed to run the `DEMO_SESSION.ipynb`. 
-
-Firstly, open your terminal or command prompt and check if the file path shown is your working directory. Else, use the following code to do that:
-```cmd
-cd folder-name 
-```
-
-Next, you will need to create a Conda environment. Code below will create a new Conda environment with a specific Python version (3.9 in this scenario). Virtualenv is tool to set up Python environments. You can install venv to your host Python with the following command:
-```cmd
-conda create --name <your-environment-name> python=3.9 virtualenv
-```
-
-Upon creating the environment, you can activate it using the following command:
-```cmd
-conda activate <your-environment-name>
-```
-
-Change directory to a project folder that you wish to set up your virtual environment.
-```cmd
-cd <path_to_repo>
-```
-Then run the following code to create a virtual environment. 
-```cmd
-python -m venv <your-virtual-environment-name>
-```
-Check that a folder named <your-virtual-environment-name> has been created. 
-
-Now you will need to activate the virtual environment before you can use it in the project. 
-
-```bash
-# MacOS
-source <your-virtual-environment-name>/bin/activate
-```
-```cmd
-# Windows
-<your-virtual-environment-name>/Scripts/activate
-```
-Now, run the code below to install all dependencies:
+3. Now, run the code below (while rrc_env is active) to install all dependencies using `pip` and the requirements.txt file provided:
 ```cmd 
 pip install -r requirements.txt
 ```
-Setting up notebook kernel
+
+### Setting up notebook kernel
+1. Install `ipykernel`.
+2. To use the conda environment as a notebook kernel, we must run the the script below.
 ```
 python -m ipykernel install --user --name=<env_name>
 ```
-<b> Deactivate a Virtual Environment </b>
-```
- deactivate
-```
+Ensure that the `rrc_env` kernel is selected when running the `tutorials/` noteebooks/
